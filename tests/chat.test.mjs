@@ -21,6 +21,15 @@ test('validates message roles, length, effort, JSON, and request origin', async 
   assert.equal((await handler(new Request('http://localhost:5173/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' }))).status, 400);
 });
 
+test('accepts the public Host when Next.js uses an internal request URL', async () => {
+  const handler = createChatHandler(() => '', () => { throw new Error('must not fetch'); });
+  const response = await handler(request(payload, { Host: 'oddly.example', Origin: 'https://oddly.example' }));
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, 'MISSING_KEY');
+  assert.equal((await handler(request(payload, { Host: 'oddly.example', Origin: 'https://other.example', 'X-Forwarded-Host': 'other.example' }))).status, 403);
+  assert.equal((await handler(request(payload, { Origin: 'null' }))).status, 403);
+});
+
 test('uses GPT-OSS 120B, sends credentials only upstream, preserves context and streams', async () => {
   const completion = 'data: {"choices":[{"delta":{"content":"Hello!"}}]}\n\ndata: [DONE]\n\n';
   let seen;

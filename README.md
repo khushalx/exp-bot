@@ -40,7 +40,7 @@ Your current conversation is sent to Groq when you send a message. History stays
 
 ## Implementation
 
-React 19 + TypeScript, the Vinext/Vite framework, Tailwind CSS, Shadcn/Radix interface primitives, and a Cloudflare Workers-compatible server. Groq is called through its OpenAI-compatible REST endpoint without exposing the key to the browser.
+Next.js 16 App Router, React 19, TypeScript, Tailwind CSS, Shadcn/Radix interface primitives, and Node.js API routes. Groq is called through its OpenAI-compatible REST endpoint without exposing the key to the browser. The standard Next.js build supports Vercel; the original Vinext/Cloudflare starter tooling is no longer used by the application scripts.
 
 - `app/page.tsx`: chatbot state and interface
 - `app/globals.css`: theme, orbital motion, responsive layouts, answer formatting
@@ -61,6 +61,17 @@ npm run typecheck
 npm run build
 ```
 
-`npm start` serves the production Worker build locally on port 8787. Both development and production preview read the root `.env`; no additional secret files are needed. Restart either server after changing the key. The everyday development workflow is `npm run dev`.
+`npm start` serves the production Next.js build locally on port 5173. Stop the development server first because both use the same port. Both commands read the root `.env`; no additional secret files are needed. Restart either server after changing the key.
+
+## Deploy to Vercel
+
+1. Push these changes to the repository connected to Vercel.
+2. Use the repository directory containing this `package.json` as the project's Root Directory. The checked-in `vercel.json` selects **Next.js**, `npm ci`, `npm run build`, and `.next` output.
+3. In Vercel Project Settings → Environment Variables, add `GROQ_API_KEY` for Production (and Preview if you use preview deployments). A local `.env` is ignored by Git and is not automatically sent to Vercel. Never prefix this secret with `NEXT_PUBLIC_`.
+4. Deploy the new commit. If retrying a previous failure, use the updated commit and disable the existing build cache for that deployment.
+
+The previous build command used Vinext, which emitted `dist/` rather than Next.js's `.next/routes-manifest.json`. Changing only the output folder could not make the Cloudflare server compatible with Vercel. The application now uses `next build` and reads its key from `process.env` in Node.js routes. The chat function allows up to 120 seconds for a streaming reply.
+
+Reference: [Vercel build settings](https://vercel.com/docs/builds/configure-a-build).
 
 No live Groq completion was made during setup because the API key is intentionally blank. Automated tests substitute the provider and check the actual request parameters, streaming, validation, cancellation, and error handling.

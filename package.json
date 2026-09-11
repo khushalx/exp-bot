@@ -7,9 +7,9 @@
   },
   "scripts": {
     "install:ci": "node scripts/install-ci.mjs",
-    "dev": "node scripts/run-framework.mjs dev",
-    "build": "node scripts/run-framework.mjs build",
-    "start": "node scripts/start-local.mjs",
+    "dev": "next dev --hostname 127.0.0.1 --port 5173",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 5173",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",

@@ -7,7 +7,15 @@ const fail = (error: string, status: number, code?: string) => Response.json({ e
 export function createChatHandler(getKey: () => string | undefined, upstreamFetch: typeof fetch = fetch) {
   return async function POST(request: Request) {
     const origin = request.headers.get("origin");
-    if (origin && origin !== new URL(request.url).origin) return fail("This request is not allowed.", 403);
+    if (origin) {
+      // Next.js may reconstruct request.url with an internal hostname. Compare
+      // against the actual incoming Host header, not arbitrary forwarded hosts.
+      try {
+        const source = new URL(origin);
+        const host = request.headers.get("host") ?? new URL(request.url).host;
+        if (!["https:", "http:"].includes(source.protocol) || source.host !== host) return fail("This request is not allowed.", 403);
+      } catch { return fail("This request is not allowed.", 403); }
+    }
     if (!request.headers.get("content-type")?.includes("application/json")) return fail("Send a JSON message.", 415);
     if (Number(request.headers.get("content-length")) > 200000) return fail("This conversation is too long. Start a new conversation.", 413);
     let payload;
@@ -19,7 +27,7 @@ export function createChatHandler(getKey: () => string | undefined, upstreamFetc
     if (!payload.success) return fail("Keep messages under 24,000 characters and conversations under 100 messages.", 400);
     if (payload.data.messages.at(-1)?.role !== "user") return fail("The last message must be from you.", 400);
     const key = getKey()?.trim();
-    if (!key) return fail("Add your Groq API key to .env and restart the app to start chatting.", 503, "MISSING_KEY");
+    if (!key) return fail("Set GROQ_API_KEY in your server environment, then restart locally or redeploy on Vercel.", 503, "MISSING_KEY");
     try {
       const upstream = await upstreamFetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
