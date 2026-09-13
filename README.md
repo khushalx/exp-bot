@@ -72,6 +72,6 @@ npm run build
 
 The previous build command used Vinext, which emitted `dist/` rather than Next.js's `.next/routes-manifest.json`. Changing only the output folder could not make the Cloudflare server compatible with Vercel. The application now uses `next build` and reads its key from `process.env` in Node.js routes. The chat function allows up to 120 seconds for a streaming reply.
 
-Reference: [Vercel build settings](https://vercel.com/docs/builds/configure-a-build).
+
 
 No live Groq completion was made during setup because the API key is intentionally blank. Automated tests substitute the provider and check the actual request parameters, streaming, validation, cancellation, and error handling.
